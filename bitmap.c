@@ -10,8 +10,9 @@ BitMapEntryKey BitMap_blockToIndex(int num){
 
 int BitMap_indexToBlock(int entry, uint8_t bit_num){
 	// converts a bit to a linear index
-	//non ho capito(???)
-	return 0;
+	int index;
+	index = entry + bit_num % 8;
+	return index;
 	
 }
 
