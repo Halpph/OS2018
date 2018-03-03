@@ -41,4 +41,13 @@ int BitMap_get(BitMap* bmap, int start, int status ){
 int BitMap_set(BitMap* bmap, int pos, int status){
 	// sets the bit at index pos in bmap to status
 	//posso fare uno shift, inserire il bit nella posizione richiesta e poi fare un'or col numero 	//precedente in modo che sostituisco solo il numero in questione se va sostituito(non sono 		//sicuro che la or funzioni però
+
+ 			int i = k/byte_dim;            // i = array index (use: A[i])
+      int pos = k%byte_dim;          // pos = bit position in A[i]
+
+      unsigned int flag = status;   // flag = 0000.....00001
+
+      flag = flag << pos;      // flag = 0000...010...000   (shifted k positions)
+
+      bmap->entries[i] = bmap->entries[i] | flag;      // Set the bit at the k-th position in A[
 }
