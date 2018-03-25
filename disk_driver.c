@@ -37,6 +37,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
         disk_header->bitmap_entries = bitmap_size;
         disk_header->free_blocks = num_blocks;
         disk_header->first_free_block = 0;
+        memset(disk->bitmap_data,'\0', bitmap_size);//metto a zero i bit, meglio usare memset 																										//rispetto a bzero
     }
 
     disk->fd = fd;
@@ -180,6 +181,10 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
 }
 
 // writes the data (flushing the mmaps)
-int DiskDriver_flush(DiskDriver* disk){
-    // TODO:
+int DiskDriver_flush(DiskDriver* disk){int bitmap_size = disk->header->num_blocks/bit_in_byte+1;
+	int ret = msync(disk->header, (size_t)sizeof(DiskHeader)+bitmap_size, MS_SYNC);								//Flush header and bitmap on file 
+		if (ret==-1){
+    	printf("Could not sync the file to disk\n");
+    }
+	return 0;
 }
