@@ -43,12 +43,13 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 }
 
 // reads the block in position block_num
-// returns -1 if the block is free accrding to the bitmap
+// returns -1 if the block is free according to the bitmap
 // 0 otherwise
 int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
     // checking if params are ok
     if(block_num > disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
 		printf("DiskDriver_readBlock: bad parameters");
+        return -1;
 	}
     //setting the bitmap
     BitMap bit_map;
@@ -81,5 +82,104 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 	}
 
     return 0;
+}
 
+// writes a block in position block_num, and alters the bitmap accordingly
+// returns -1 if operation not possible
+int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
+    // checking if params are ok
+    if(block_num > disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
+		printf("DiskDriver_writeBlock: bad parameters");
+        return -1;
+	}
+    //setting the bitmap
+    BitMap bit_map;
+    bit_map.num_bits = disk->header->bitmap_blocks;
+    bit_map.entries = disk->bitmap_data;
+
+    // check if that block is not free
+    if(block_num >= bit_map->num_bits) return -1;   // invalid block
+    BitMapEntryKey entry_key = BitMap_blockToIndex(block_num);
+    if(bit_map->entries[entry_key.entry_num] >> entry_key.bit_num & 1)
+        return -1;
+
+    // updating the first free block of the list
+    if(block_num == disk->header->first_free_block)																//update first_free_block
+        disk->header->first_free_block = DiskDriver_getFreeBlock(disk, block_num+1);
+
+    // decreasing free_blocks because i'm writing one
+    BitMap_set(&bmap, block_num, 1);																			//block become full on bitmap
+    disk->header->free_blocks -= 1;
+
+    int fd = disk->fd;
+    // lseek on DISKHEADER+BITMAPENTRIES+MYBLOCKOFFSET
+    off_t off = lseek(fd,sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE), SEEK_SET);
+    if(off == -1){
+        printf("DiskDriver_readBlock: lseek error\n");
+        return -1;
+    }
+
+    int ret, bytes_written = 0;
+    // read until the whole BLOCK_SIZE is covered
+	while(bytes_written < BLOCK_SIZE){
+        // write src on block_num pos
+		ret = write(fd, src + bytes_written, BLOCK_SIZE - bytes_written);
+
+		if (ret == -1 && errno == EINTR) continue;
+
+		bytes_written +=ret;
+	}
+    return 0;
+}
+
+// returns the first free blockin the disk from position (checking the bitmap)
+int DiskDriver_getFreeBlock(DiskDriver* disk, int start){
+    if(disk == NULL || start < 0){
+        printf("DiskDriver_getFreeBlock: bad parameters\n");
+        return -1;
+    }
+    //setting the bitmap
+    BitMap bit_map;
+    bit_map.num_bits = disk->header->bitmap_blocks;
+    bit_map.entries = disk->bitmap_data;
+
+    // getting the first block with status "0" (which means that is a free block) from position start
+    return BitMap_get(&bit_map, start, 0);
+}
+
+// frees a block in position block_num, and alters the bitmap accordingly
+// returns -1 if operation not possible
+int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
+    if(disk == NULL || block_num < 0){
+        printf("DiskDriver_freeBlock: bad parameters\n");
+        return -1;
+    }
+    //setting the bitmap
+    BitMap bit_map;
+    bit_map.num_bits = disk->header->bitmap_blocks;
+    bit_map.entries = disk->bitmap_data;
+
+    // check if that block is already free
+    if(block_num >= bit_map->num_bits) return -1;   // invalid block
+    BitMapEntryKey entry_key = BitMap_blockToIndex(block_num);
+    if(bit_map->entries[entry_key.entry_num] >> entry_key.bit_num & 0)
+        return -1;
+
+    int ret = BitMap_set(bit_map, block_num, 0);
+    if(ret == -1){
+        printf("DiskDriver_freeBlock: BitMap_set error\n");
+        return -1;
+    }
+    // updating the first free block of the list
+    // 1. is it before the current first_free block?
+    // 2. is the current first_free block not set (-1)?
+    if(block_num < disk->header->first_free_block || disk->header->first_free_block == -1)																//update first_free_block
+        disk->header->first_free_block = block_num;
+
+    return 0;
+}
+
+// writes the data (flushing the mmaps)
+int DiskDriver_flush(DiskDriver* disk){
+    // TODO:
 }
