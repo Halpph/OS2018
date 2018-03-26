@@ -19,7 +19,32 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 // it also clears the bitmap of occupied blocks on the disk
 // the current_directory_block is cached in the SimpleFS struct
 // and set to the top level directory
-void SimpleFS_format(SimpleFS* fs);
+void SimpleFS_format(SimpleFS* fs){
+	if (fs == NULL)
+		printf("Impossible to format: Wrong Parameters\n");
+		return -1;
+
+	int ret = 0;
+
+	FirstDirectoryBlock rootDir = {0}; //create the block for root directory, set to 0 to clean old data
+	rootDir.header.block_in_file = 0;																//populate header
+	rootDir.header.previous_block = -1;
+	rootDir.header.next_block = -1;
+																									//populate fcb
+	rootDir.fcb.directory_block = -1;																//no parents => -1
+	rootDir.fcb.block_in_disk = 0;
+	rootDir.fcb.is_dir = 1;
+	strcpy(rootDir.fcb.name, "/");
+
+	fs->disk->header->free_blocks = fs->disk->header->num_blocks;									//clear bitmap to simple format disk
+	fs->disk->header->first_free_block = 0;															//starts by 0 because writeBlock will change bitmap
+	int bitmap_size = fs->disk->header->bitmap_entries;
+	bzero(fs->disk->bitmap_data, bitmap_size);														//function to put 0 in every bytes for bitmap_size length
+
+	ret = DiskDriver_writeBlock(fs->disk, &rootDir, 0);												//write root directory on block 0, offset of diskHeader and bitmap_data already calculated by write
+	if (ret == -1)
+		printf("%sImpossible to format: problem on writeBlock\n%s", COL_RED, COL_GRAY);				//can't return error becouse function return imposted on void
+}
 
 // creates an empty file in the directory d
 // returns null on error (file existing, no free blocks)

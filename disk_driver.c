@@ -78,8 +78,9 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 		ret = read(fd, dest + bytes_reads, BLOCK_SIZE - bytes_reads);
 
 		if (ret == -1 && errno == EINTR) continue;
-
+		else if(ret==-1 && errno !=EINTR) return -1;
 		bytes_reads +=ret;
+		
 	}
 
     return 0;
@@ -171,6 +172,7 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
         printf("DiskDriver_freeBlock: BitMap_set error\n");
         return -1;
     }
+    
     // updating the first free block of the list
     // 1. is it before the current first_free block?
     // 2. is the current first_free block not set (-1)?
