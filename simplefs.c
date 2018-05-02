@@ -6,12 +6,10 @@
 DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
     DirectoryHandle* dir_handle = malloc(sizeof(DirectoryHandle));
     fs->disk = disk;
-    dir_handle ->sfs = fs;
+    dir_handle->sfs = fs;
 
-    FirstDirectoryBlock * dcb = malloc(sizeof(FirstDirectoryBlock));
-    BlockHeader block_header = malloc(sizeof(BlockHeader));
-    FileControlBlock fcb = malloc(sizeof(FileControlBlock));
-    dcb->directory = null;
+    FirstDirectoryBlock * fdb = malloc(sizeof(FirstDirectoryBlock));
+    
 }
 
 // creates the inital structures, the top level directory
