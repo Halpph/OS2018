@@ -26,12 +26,14 @@ int BitMap_get(BitMap* bmap, int start, int status ){
 	 										//all'interno della bitmap
 	int i = 0;
 	int j = 0;
-	char stat = status;
-	for(i = 0; i < bmap->num_bits-start; i++){
-		BitMapEntryKey map = BitMap_blockToIndex(start+i);
-		if((bmap->entries[map.entry_num] >> map.bit_num) & status)
+	for(i = start; i < bmap->num_bits; i++){
+		BitMapEntryKey map = BitMap_blockToIndex(start);
+		if(((bmap->entries[map.entry_num] >> map.bit_num) & 0x01) == status)
 		 	return BitMap_indexToBlock(map.entry_num,map.bit_num);
+		start++;
+
 	}
+	printf("GET FALLITA!\n");
 	return -1;
 }
 
@@ -43,9 +45,14 @@ int BitMap_set(BitMap* bmap, int pos, int status){
 	//se va sostituito(non sono sicuro che la or funzioni però)
 	if(pos > bmap->num_bits) return -1;
 	BitMapEntryKey map = BitMap_blockToIndex(pos);
-	unsigned int flag = status; // flag = 0000.....00001
-	flag = flag << map.bit_num; // flag = 0000...010...000   (shifted k positions)
-	bmap->entries[map.entry_num] = bmap->entries[map.entry_num] | flag;
+	unsigned char flag = 1 << map.bit_num; // flag = 0000...010...000   (shifted k positions)
+	if(status == 1){
+		bmap->entries[map.entry_num] = bmap->entries[map.entry_num] | flag;
+		return bmap->entries[map.entry_num] | flag;
+	}else{
+		bmap->entries[map.entry_num] = bmap->entries[map.entry_num] & (~flag);
+		return bmap->entries[map.entry_num] & (~flag); //~ NOT OPERATOR
+	}
 	return 0;
 }
 
