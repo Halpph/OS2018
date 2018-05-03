@@ -1,6 +1,8 @@
 #include "simplefs.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 int main(int argc, char** argv) {
     int i = 0;
     char entries1[8] = "11110011";
@@ -44,6 +46,39 @@ int main(int argc, char** argv) {
 
     printf("\n\n@ @ @ @ @ DISK DRIVER @ @ @ @ @\n\n");
     DiskDriver* disk_driver = (DiskDriver*)malloc(sizeof(DiskDriver));
+    const char* filename = "./disk_driver.txt";
+    BlockHeader block_header; // header for each block
+
+    printf("...populating blocks\n");
+    FileBlock* file_block1 = malloc(sizeof(FileBlock));
+    file_block1->header = block_header;
+    char data1[BLOCK_SIZE-sizeof(BlockHeader)];
+    for(i = 0; i < BLOCK_SIZE-sizeof(BlockHeader); i++)
+        data1[i] = '1'; // populate with block_num
+    data1[BLOCK_SIZE-sizeof(BlockHeader)-1] = '\0'; // end of file
+    strcpy(file_block1->data,data1); // saving string on my file_block data
+
+    FileBlock* file_block2 = malloc(sizeof(FileBlock));
+    file_block2->header = block_header;
+    char data2[BLOCK_SIZE-sizeof(BlockHeader)];
+    for(i = 0; i < BLOCK_SIZE-sizeof(BlockHeader); i++)
+        data2[i] = '2'; // populate with block_num
+    data2[BLOCK_SIZE-sizeof(BlockHeader)-1] = '\0'; // end of file
+    strcpy(file_block2->data,data2); // saving string on my file_block data
+
+    FileBlock* file_block3 = malloc(sizeof(FileBlock));
+    file_block3->header = block_header;
+    char data3[BLOCK_SIZE-sizeof(BlockHeader)];
+    for(i = 0; i < BLOCK_SIZE-sizeof(BlockHeader); i++)
+        data3[i] = '3'; // populate with block_num
+    data3[BLOCK_SIZE-sizeof(BlockHeader)-1] = '\0'; // end of file
+    strcpy(file_block3->data,data3); // saving string on my file_block data
+
+    printf("...initializing disk with 3 blocks\n");
+    DiskDriver_init(disk_driver,filename,3);
+    printf("...flushing disk\n");
+    DiskDriver_flush(disk_driver);
+
 
     /*printf("FirstBlock size %ld\n", sizeof(FirstFileBlock));
     printf("DataBlock size %ld\n", sizeof(FileBlock));
