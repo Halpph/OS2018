@@ -76,8 +76,8 @@ int main(int argc, char** argv) {
 
     printf("...initializing disk with 3 blocks\n");
     DiskDriver_init(disk_driver,filename,3);
-    printf("...flushing disk\n");
-    DiskDriver_flush(disk_driver);
+    //printf("...flushing disk\n");
+    //DiskDriver_flush(disk_driver);
 
 
     /*printf("FirstBlock size %ld\n", sizeof(FirstFileBlock));
