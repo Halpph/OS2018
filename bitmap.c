@@ -22,8 +22,10 @@ int BitMap_indexToBlock(int entry, uint8_t bit_num){
 int BitMap_get(BitMap* bmap, int start, int status ){
 // returns the index of the first bit having status "status"
 // in the bitmap bmap, and starts looking from position start
-	if (start > bmap->num_bits) return -1; //start maggiore dal numero dei bit
-	 										//all'interno della bitmap
+	if (start > bmap->num_bits){
+		printf("Bitmap_get bad parameters (start > num_bits)\n");
+	 return -1; //start maggiore dal numero dei bit all'interno della bitmap
+	 }
 	int i = 0;
 	int j = 0;
 	for(i = start; i < bmap->num_bits; i++){
@@ -33,7 +35,7 @@ int BitMap_get(BitMap* bmap, int start, int status ){
 		start++;
 
 	}
-	printf("GET FALLITA!\n");
+	printf("ATTENTION: No more free blocks!\n");
 	return -1;
 }
 
