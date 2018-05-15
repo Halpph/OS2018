@@ -221,7 +221,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
     if(where_i_found_space == 0){ // space in FDB
         fdb->num_entries++;
-        fdb->file_block[entry] = first_free_block;
+        fdb->file_blocks[entry] = first_free_block;
         DiskDriver_freeBlock(disk_driver,fdb->fcb.block_in_disk);
         DiskDriver_writeBlock(disk_driver,fdb,fdb->fcb.block_in_disk);
     }else{ // space in DB
