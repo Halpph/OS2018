@@ -101,12 +101,9 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
             }
             next_block = db.header.next_block;
         }
-
-
-
-
-
     }
+
+    
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory
