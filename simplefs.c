@@ -1,5 +1,7 @@
 #include "simplefs.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <
 
 // initializes a file system on an already made disk
 // returns a handle to the top level directory stored in the first block
@@ -220,11 +222,11 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         fdb->num_entries++;
         fdb->file_block[entry] = new_file_block;
         DiskDriver_freeBlock(disk_driver,fdb->fcb.block_in_disk);
-        DiskDriver_writeBlock(disk_driver,fdb,fdb.->fcb.block_in_disk);
+        DiskDriver_writeBlock(disk_driver,fdb,fdb->fcb.block_in_disk);
     }else{ // space in DB
         fdb->num_entries++;
         DiskDriver_freeBlock(disk_driver,fdb->fcb.block_in_disk);
-        DiskDriver_writeBlock(disk_driver,fdb,fdb.->fcb.block_in_disk);
+        DiskDriver_writeBlock(disk_driver,fdb,fdb->fcb.block_in_disk);
         directory_block.file_blocks[entry] = new_file_block;
         DiskDriver_freeBlock(disk_driver,block_number);
         DiskDriver_writeBlock(disk_driver,&directory_block,block_number);
@@ -236,7 +238,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     file_handle->directory = fdb;
     file_handle->pos_in_file = 0;
 
-    return fh;
+    return file_handle;
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory
