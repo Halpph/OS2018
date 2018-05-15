@@ -1,7 +1,7 @@
 #include "simplefs.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <
+
 
 // initializes a file system on an already made disk
 // returns a handle to the top level directory stored in the first block
@@ -147,6 +147,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     int block_number = fdb->fcb.block_in_disk; // used to save current block in disk
     int max_free_space_in_fdb = (BLOCK_SIZE-sizeof(BlockHeader)-sizeof(FileControlBlock)-sizeof(int))/sizeof(int);
     int max_free_space_in_db = (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int);
+    DirectoryBlock directory_block;
 
     if(fdb->num_entries < max_free_space_in_fdb){ // check if there's enough space in FirstDirectoryBlock
         int* blocks = fdb->file_blocks;
@@ -161,7 +162,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         where_i_found_space = 1; // i'm in DB now
         // if there isn't space in FirstDirectoryBlock
         // check in DirectoryBlock
-        DirectoryBlock directory_block;
         next_block = fdb->header.next_block;
 
         while(next_block != -1 && found == 0){ // while there's a next block, and while I've not found a free space
