@@ -75,15 +75,17 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     int ret;
 
     FirstDirectoryBlock* fdb = d->dcb;
-    DiskDriver* disk_driver = d->fs->disk;
+    DiskDriver* disk = d->sfs->disk;
+    int max_free_space_fdb = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int))/sizeof(int);
+    int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
 
     if(fdb->num_entries > 0){ // directory isn't empty
         // checking file esistence in FirstDirectoryBlock
         FirstFileBlock to_check;
         int i;
-        for(i = 0; i < entries; i++){
-            if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk_driver,&to_check,file_blocks[i]) != -1)){ //check if block is free
-                if(strncmp(to_check.fdb.name,filename,128)){
+        for(i = 0; i < max_free_space_fdb; i++){
+            if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
+                if(strncmp(to_check.fcb.name,filename,128)){
                     printf("createFile: File already exists!\n");
                     return NULL;
                 }
@@ -95,15 +97,15 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         DirectoryBlock db;
 
         while(next_block != -1){ // while I have blocks
-            ret = DiskDriver_readBlock(disk_driver,db,next_block); // reading each block
+            ret = DiskDriver_readBlock(disk,&db,next_block); // reading each block
             if(ret == -1){
                 printf("createFile: error in readBlock\n");
                 return NULL;
             }
             // check file esistence in each block
-            for(i = 0; i < entries; i++){
-                if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk_driver,&to_check,file_blocks[i]) != -1)){ //check if block is free
-                    if(strncmp(to_check.fdb.name,filename,128) == 0){
+            for(i = 0; i < max_free_space_db; i++){
+                if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,db.file_blocks[i]) != -1)){ //check if block is free
+                    if(strncmp(to_check.fcb.name,filename,128) == 0){
                         printf("createFile: File already exists!\n");
                         return NULL;
                     }
@@ -149,9 +151,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     int blockInFile = 0; // number of the block in the directory
     int fdb_or_db_save = 0; // '0' save the next block after fdb, '1' after db_last
     int fdb_or_max_free_space_db = 0;	//'0' there is space in firstDirectoryBlock, '1' space in another block
-
-    int max_free_space_fdb = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int))/sizeof(int);
-    int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
 
     if (fdb->num_entries < max_free_space_fdb){	//check if there's free space in FirstDirectoryBlock
         int* blocks = fdb->file_blocks;
@@ -245,8 +244,10 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
 // reads in the (preallocated) blocks array, the name of all files in a directory
 int SimpleFS_readDir(char** names, DirectoryHandle* d){
-	if (d == NULL || names == NULL)
-		ERROR_HELPER(-1, "Impossible to read directory: Bad Parameters\n");
+	if (d == NULL || names == NULL){
+		printf("Impossible to read directory: Bad Parameters\n");
+        return -1;
+    }
 
 	int ret = 0, num_tot = 0;
 	FirstDirectoryBlock *fdb = d->dcb;
@@ -295,12 +296,16 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
 // opens a file in the  directory d. The file should be exisiting
 FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
-	if (d == NULL || filename == NULL)
-		ERROR_HELPER(-1, "Impossible to open file: Bad Parameters\n");
+	if (d == NULL || filename == NULL){
+		printf("Impossible to open file: Bad Parameters\n");
+        return NULL;
+    }
 
 	int ret = 0;
 	FirstDirectoryBlock *fdb = d->dcb;
 	DiskDriver* disk = d->sfs->disk;
+    int max_free_space_fdb = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int))/sizeof(int);
+    int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
 
 	if (fdb->num_entries > 0){	// directory is not empty
 		FileHandle* fh = malloc(sizeof(FileHandle)); // create and populate handle to return
@@ -313,9 +318,9 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
         // checking file esistence in FirstDirectoryBlock
         int i,pos;
-        for(i = 0; i < entries; i++){
-            if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk_driver,to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
-                if(strncmp(to_check.fdb.name,filename,128) == 0){
+        for(i = 0; i < max_free_space_fdb; i++){
+            if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
+                if(strncmp(to_check->fcb.name,filename,128) == 0){
                     found = 1;
                     pos = i;
     				DiskDriver_readBlock(disk, to_check, fdb->file_blocks[i]);	//read again the correct file to complete handler
@@ -336,9 +341,9 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 				return NULL;
 			}
 
-            for(i = 0; i < entries; i++){
-                if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk_driver,to_check,db.file_blocks[i]) != -1)){ //check if block is free
-                    if(strncmp(to_check.db.name,filename,128) == 0){
+            for(i = 0; i < max_free_space_db; i++){
+                if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,to_check,db.file_blocks[i]) != -1)){ //check if block is free
+                    if(strncmp(to_check->fcb.name,filename,128) == 0){
                         found = 1;
                         pos = i;
         				DiskDriver_readBlock(disk, to_check, db.file_blocks[i]);	// read again the correct file to complete handler
@@ -363,6 +368,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 		printf("Impossible to open file: direcoty is empty\n");
 		return NULL;
 	}
+    return NULL;
 }
 
 // closes a file handle (destroyes it)
@@ -548,10 +554,14 @@ int SimpleFS_seek(FileHandle* f, int pos){
 // 0 on success, negative value on error
 // it does side effect on the provided handle
 int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
-	if (d == NULL || dirname == NULL)
-		ERROR_HELPER(-1, "Impossible to change dir: Bad Parameters\n");
+	if (d == NULL || dirname == NULL){
+		printf("Impossible to change dir: Bad Parameters\n");
+        return -1;
+    }
 
-	int ret = 0;
+    int max_free_space_fdb = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int))/sizeof(int);
+    int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
+	int ret = 0, i = 0;
 
 	if (!strncmp(dirname, "..", 2)){ // go one level up
 		if (d->dcb->fcb.block_in_disk == 0){ // check if i'm in root
@@ -589,7 +599,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 
     for (i = 0; i < max_free_space_fdb; i++){ //checks every block indicator in the directory block
        if (fdb->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, fdb->file_blocks[i]) != -1){  //read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
-           if (!strncmp(to_check.fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
+           if (!strncmp(to_check->fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
                 DiskDriver_readBlock(disk, to_check, fdb->file_blocks[i]); // read again the correct directory to save it
                 d->pos_in_block = 0; // reset directory
            		d->directory = fdb;	//parent directory become this directory
@@ -610,9 +620,9 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
         }
 
         for (i = 0; i < max_free_space_db; i++){ // checks every block indicator in the directory block
-            if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, db->file_blocks[i]) != -1){  // read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
-               if (!strncmp(to_check.fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
-                    DiskDriver_readBlock(disk, to_check, db->file_blocks[i]); // read again the correct directory to save it
+            if (db.file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, db.file_blocks[i]) != -1){  // read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
+               if (!strncmp(to_check->fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
+                    DiskDriver_readBlock(disk, to_check, db.file_blocks[i]); // read again the correct directory to save it
                     d->pos_in_block = 0; // reset directory
                		d->directory = fdb;	// parent directory become this directory
                		d->dcb = to_check;  // this directory become the read directory
@@ -631,12 +641,17 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 // 0 on success
 // -1 on error
 int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
-	if (d == NULL || dirname == NULL)
-		ERROR_HELPER(-1, "Impossible to create directory: Bad Parameters\n");
+	if (d == NULL || dirname == NULL){
+		printf("Impossible to create directory: Bad Parameters\n");
+        return -1;
+    }
+    int max_free_space_fdb = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int))/sizeof(int);
+    int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
 
-	int ret = 0;
-	FirstDirectoryBlock *fdb = d->dcb;	// save pointers, used for performance
+	int ret = 0, i = 0;
+	FirstDirectoryBlock *fdb = d->dcb;
 	DiskDriver* disk = d->sfs->disk;
+    FirstFileBlock to_check;
 
 	if (fdb->num_entries > 0){	// directory not empty, needs to check if dir with dirname already exist
         for (i = 0; i < max_free_space_fdb; i++){ // checks every block indicator in the directory block
@@ -658,7 +673,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 				return -1;
 			}
             for (i = 0; i < max_free_space_db; i++){ // checks every block indicator in the directory block
-                if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, db->file_blocks[i]) != -1){  // read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
+                if (db.file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, db.file_blocks[i]) != -1){  // read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
                    if (strncmp(to_check.fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
                        printf("Impossible to create directory: file already exist\n");
                    	   return -1;
@@ -692,7 +707,6 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 		return -1;
 	}
 
-	int i = 0;
 	int found = 0;	// to check if there is space in already created blocks of the directory, '1' ok | '0' no space
 	int block_number = fdb->fcb.block_in_disk; // number of the current block inside the disk
 	DirectoryBlock db_last;	 // in case of no space in firstDirectoryBlock this will save the current block
@@ -791,16 +805,22 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(DirectoryHandle* d, char* filename){
-	if (d == NULL || filename == NULL)
-		ERROR_HELPER(-1, "Impossible to remove directory: Bad Parameters\n");
+	if (d == NULL || filename == NULL){
+		printf("Impossible to remove directory: Bad Parameters\n");
+        return -1;
+    }
+
+    DiskDriver* disk = d->sfs->disk;
+    int max_free_space_fdb = (BLOCK_SIZE - sizeof(BlockHeader) - sizeof(FileControlBlock) - sizeof(int))/sizeof(int);
+    int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
 
 	FirstDirectoryBlock* fdb = d->dcb;
 
     FirstFileBlock to_check;
     int i,id = -1;
     for(i = 0; i < max_free_space_fdb; i++){
-        if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk_driver,&to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
-            if(strncmp(to_check.fdb.name,filename,128) == 0){
+        if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
+            if(strncmp(to_check.fcb.name,filename,128) == 0){
                 id = i;
                 printf("createFile: File already exists!\n");
                 return -1;
@@ -819,8 +839,8 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			first = 0;	// on the other blocks of current directory
 			if(DiskDriver_readBlock(d->sfs->disk, db_tmp, next_block) == -1) return -1;
             for(i = 0; i < max_free_space_db; i++){
-                if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk_driver,&to_check,db->file_blocks[i]) != -1)){ //check if block is free
-                    if(strncmp(to_check.fdb.name,filename,128) == 0){
+                if(db_tmp->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,db_tmp->file_blocks[i]) != -1)){ //check if block is free
+                    if(strncmp(to_check.fcb.name,filename,128) == 0){
                         id = i;
                         printf("createFile: File already exists!\n");
                         return -1;
