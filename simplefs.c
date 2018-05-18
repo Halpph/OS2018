@@ -375,6 +375,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 int SimpleFS_close(FileHandle* f){
 	free(f->fcb);
 	free(f);
+    return 1;
 }
 
 // writes in the file, at current position for size bytes stored in data
@@ -902,7 +903,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 				}
 				block_in_disk = next;
 				next = db_tmp.header.next_block;
-				DiskDriver_FreeBlock(d->sfs->disk, block_in_disk);
+				DiskDriver_freeBlock(d->sfs->disk, block_in_disk);
 			}
 			DiskDriver_freeBlock(d->sfs->disk, idf);
 			d->dcb = fdb;
