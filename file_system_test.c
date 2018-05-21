@@ -15,14 +15,15 @@ int main(int argc, char** argv){
 
 	SimpleFS sfs;
 
-	DirectoryHandle* dir_handle= SimpleFS_init(&sfs, &disk_driver);
-	printf("-------SimpleFS init---------\n");
+    printf("-------SimpleFS init---------\n");
+	DirectoryHandle* dir_handle = SimpleFS_init(&sfs, &disk_driver);
+    if(dir_handle == NULL){
+        printf("-------SimpleFS formatted---------\n\n");
+        SimpleFS_format(&sfs);
+        dir_handle = SimpleFS_init(&sfs, &disk_driver);
 
+    }
 	DirectoryHandle* root_dir_handle = dir_handle;// inizialmente root e current combaciano
-
-
-	SimpleFS_format(&sfs);
-	printf("-------SimpleFS formatted---------\n\n");
 
 	FileHandle* file_handle;
 	char testo[512];
@@ -117,11 +118,17 @@ int main(int argc, char** argv){
 			break;
 
 		case 4:// rimozione file
+            printf("------Lista file disponibili------\n");
+            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+			for(i=0; i<dir_handle->dcb->num_entries; i++){
+				if(is_file[i] == 0) // se è file
+					printf("FILE - %s\n", file_in_directory[i]);
+			}
 			printf("------Inserire nome del file da eliminare------\n");
 			scanf("%s",nomefile);
 
-			SimpleFS_remove(dir_handle, nomefile);
-			printf("------File eliminato------\n");
+			int ret = SimpleFS_remove(dir_handle, nomefile);
+			if(ret != -1) printf("------File eliminato------\n");
 
 			break;
 
