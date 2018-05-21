@@ -117,24 +117,27 @@ int main(int argc, char** argv){
 
 			break;
 
-		case 4:// rimozione file
-            printf("------Lista file disponibili------\n");
-            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+		case 4:// rimozione file/directory
+			printf("------Lista file/directory disponibili------\n");
+			SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 			for(i=0; i<dir_handle->dcb->num_entries; i++){
 				if(is_file[i] == 0) // se è file
 					printf("FILE - %s\n", file_in_directory[i]);
+				else
+					printf("DIR  - %s\n", file_in_directory[i]);
 			}
+
 			printf("------Inserire nome del file da eliminare------\n");
 			scanf("%s",nomefile);
 
-			int ret = SimpleFS_remove(dir_handle, nomefile);
-			if(ret != -1) printf("------File eliminato------\n");
-
+			ret = SimpleFS_remove(dir_handle, nomefile);
+			if (ret == 0)	printf("------File eliminato------\n");
+			else if(ret == -1) printf("------Errore eliminazione file------\n");
 			break;
 
 		case 5: // creazione directory
-            printf("------Lista file/directory disponibili------\n");
-            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+      printf("------Lista file/directory disponibili------\n");
+      SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 			for(i=0; i<dir_handle->dcb->num_entries; i++){
 				if(is_file[i] == 0) // se è file
 					printf("FILE - %s\n", file_in_directory[i]);
@@ -149,7 +152,7 @@ int main(int argc, char** argv){
 			break;
 
 		case 6:// Stampa contenuto directory
-
+			printf("Contenuto Directory:\n\n");
 			SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 			for(i=0; i<dir_handle->dcb->num_entries; i++){
 				if(is_file[i] == 0) // se è file
@@ -161,6 +164,16 @@ int main(int argc, char** argv){
 			break;
 
 		case 7://Cambio directory
+
+      printf("------Lista file/directory disponibili------\n");
+			SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+			for(i=0; i<dir_handle->dcb->num_entries; i++){
+				if(is_file[i] == 0) // se è file
+					printf("FILE - %s\n", file_in_directory[i]);
+				else
+					printf("DIR  - %s\n", file_in_directory[i]);
+			}
+
 			printf("------Inserire directory ('..' per tornare indietro)------\n");
 			scanf("%s",nomefile);
 			SimpleFS_changeDir(dir_handle, nomefile);
