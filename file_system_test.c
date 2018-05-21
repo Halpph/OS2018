@@ -153,7 +153,7 @@ int main(int argc, char** argv){
 			break;
 
 		case 6:// Stampa contenuto directory
-
+			printf("Contenuto Directory:\n\n");
 			SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 			for(i=0; i<dir_handle->dcb->num_entries; i++){
 				if(is_file[i] == 0) // se è file
