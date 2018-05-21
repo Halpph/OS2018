@@ -827,8 +827,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
         if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
             if(strncmp(to_check.fcb.name,filename,128) == 0){
                 id = i;
-                printf("createFile: File already exists!\n");
-                return -1;
+                break;
             }
         }
     }
@@ -847,8 +846,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
                 if(db_tmp->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,db_tmp->file_blocks[i]) != -1)){ //check if block is free
                     if(strncmp(to_check.fcb.name,filename,128) == 0){
                         id = i;
-                        printf("createFile: File already exists!\n");
-                        return -1;
+                        break;
                     }
                 }
             }
