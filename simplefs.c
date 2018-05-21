@@ -264,7 +264,7 @@ int SimpleFS_readDir(char** names,int* is_file, DirectoryHandle* d){
 		for (i = 0; i < max_free_space_fdb; i++){	// checks every block entry in the directory FirstDirectoryBlock
 			if (blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, blocks[i]) != -1){ // blocks[i] > 0 => to_check not empty, read to check the name
 				names[num_tot] = strndup(to_check.fcb.name, 128); // save the name in the buffer
-                is_dir[i] = to_check.fcb.is_dir;
+                is_file[i] = to_check.fcb.is_dir;
                 num_tot++;
 			}
 		}
@@ -284,7 +284,7 @@ int SimpleFS_readDir(char** names,int* is_file, DirectoryHandle* d){
 				for (i = 0; i < max_free_space_db; i++){	 // checks every block indicator in the directory FirstDirectoryBlock
 					if (blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, blocks[i]) != -1){ // blocks[i] > 0 => to_check not empty, read to check the name
 						names[num_tot] = strndup(to_check.fcb.name, 128); // save the name in the buffer
-                        is_dir[i] = to_check.fcb.is_dir;
+                        is_file[i] = to_check.fcb.is_dir;
                         num_tot++;
 					}
 				}
@@ -566,7 +566,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
     int max_free_space_db = (BLOCK_SIZE - sizeof(BlockHeader))/sizeof(int);
 	int ret = 0, i = 0;
 
-	if (!strncmp(dirname, "..", 2)){ // go one level up
+	if (strncmp(dirname, "..", 2) == 0){ // go one level up
 		if (d->dcb->fcb.block_in_disk == 0){ // check if i'm in root
 			printf("Impossible to read parent directory, this is root directory\n");
 			return -1;
@@ -593,7 +593,8 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 		printf("Impossible to change directory, this directory is empty\n");
 		return -1;
 	}
-
+	
+	printf("-----ERRORE PRIMA DI FDB-----\n");
     // if not go level up and directory is not empty
 	FirstDirectoryBlock *fdb = d->dcb;
 	DiskDriver* disk = d->sfs->disk;
@@ -601,8 +602,9 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 	FirstDirectoryBlock* to_check = malloc(sizeof(FirstDirectoryBlock));
 
     for (i = 0; i < max_free_space_fdb; i++){ //checks every block indicator in the directory block
+    	printf("-----NEL FOR i-----\n");
        if (fdb->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, fdb->file_blocks[i]) != -1){  //read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
-           if (!strncmp(to_check->fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
+           if (strncmp(to_check->fcb.name, dirname, 128) == 0){ // string compare name strings, return 0 if s1 == s2
                 DiskDriver_readBlock(disk, to_check, fdb->file_blocks[i]); // read again the correct directory to save it
                 d->pos_in_block = 0; // reset directory
            		d->directory = fdb;	//parent directory become this directory
@@ -611,7 +613,8 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
            }
        }
    }
-
+		
+		printf("-----ERRORE PRIMA DI DB-----\n");
    int next = fdb->header.next_block;
    DirectoryBlock db;
 
@@ -624,7 +627,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 
         for (i = 0; i < max_free_space_db; i++){ // checks every block indicator in the directory block
             if (db.file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, db.file_blocks[i]) != -1){  // read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
-               if (!strncmp(to_check->fcb.name, dirname, 128)){ // string compare name strings, return 0 if s1 == s2
+               if (strncmp(to_check->fcb.name, dirname, 128) == 0){ // string compare name strings, return 0 if s1 == s2
                     DiskDriver_readBlock(disk, to_check, db.file_blocks[i]); // read again the correct directory to save it
                     d->pos_in_block = 0; // reset directory
                		d->directory = fdb;	// parent directory become this directory

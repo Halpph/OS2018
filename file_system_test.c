@@ -29,6 +29,7 @@ int main(int argc, char** argv){
 	
 	int risposta;
 	char nomefile[128];
+	int is_file[128];
 	int ret;
 	char** file_in_directory = malloc(sizeof(char*)*128);
 	int i;
@@ -115,7 +116,7 @@ int main(int argc, char** argv){
 		case 5: // creazione directory
 		printf("-----------Inserire nome directory-----------\n");		
 		scanf("%s",nomefile);
-		SimpleFS_mkDir(dir_handle,nomefile + ".dir");
+		SimpleFS_mkDir(dir_handle,nomefile);
 		printf("-----------Directory creata-----------\n");
 		
 		break;
@@ -123,15 +124,22 @@ int main(int argc, char** argv){
 		
 		case 6:// Stampa contenuto directory
 		
-		SimpleFS_readDir(file_in_directory,dir_handle);
+		SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 		for(i=0; i<dir_handle->dcb->num_entries; i++){
-			printf("- %s\n", file_in_directory[i]);
+			if(is_file[i] == 0) // se è file
+				printf("FILE - %s\n", file_in_directory[i]);
+			else
+				printf("DIR  - %s\n", file_in_directory[i]);
 		}
 			
 		break;
 		
 		case 7://Cambio directory
-		
+		printf("--------Inserire directory ('..' per tornare indietro)----------\n");
+		scanf("%s",nomefile);
+		SimpleFS_changeDir(dir_handle, nomefile);
+		printf("---------Directory cambiata---------");
+		printf("Directory corrente: %s", dir_handle->dcb->fcb.name);
 		
 		break;
 		
