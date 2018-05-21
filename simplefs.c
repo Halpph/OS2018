@@ -85,7 +85,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         int i;
         for(i = 0; i < max_free_space_fdb; i++){
             if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
-                if(strncmp(to_check.fcb.name,filename,128)){
+                if(strncmp(to_check.fcb.name,filename,128) == 0){
                     printf("createFile: File already exists!\n");
                     return NULL;
                 }
@@ -243,7 +243,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory
-int SimpleFS_readDir(char** names, DirectoryHandle* d){
+int SimpleFS_readDir(char** names,int* is_file, DirectoryHandle* d){
 	if (d == NULL || names == NULL){
 		printf("Impossible to read directory: Bad Parameters\n");
         return -1;
@@ -264,6 +264,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 		for (i = 0; i < max_free_space_fdb; i++){	// checks every block entry in the directory FirstDirectoryBlock
 			if (blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, blocks[i]) != -1){ // blocks[i] > 0 => to_check not empty, read to check the name
 				names[num_tot] = strndup(to_check.fcb.name, 128); // save the name in the buffer
+                is_dir[i] = to_check.fcb.is_dir;
                 num_tot++;
 			}
 		}
@@ -283,6 +284,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 				for (i = 0; i < max_free_space_db; i++){	 // checks every block indicator in the directory FirstDirectoryBlock
 					if (blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, blocks[i]) != -1){ // blocks[i] > 0 => to_check not empty, read to check the name
 						names[num_tot] = strndup(to_check.fcb.name, 128); // save the name in the buffer
+                        is_dir[i] = to_check.fcb.is_dir;
                         num_tot++;
 					}
 				}
