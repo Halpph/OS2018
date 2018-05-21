@@ -40,7 +40,7 @@ int main(int argc, char** argv){
 
 	do{
 		printf("|--------- Selezionare l'operazione da fare: ---------|\n");
-		printf("| 1) Crea File \n| 2) Scrivi su file \n| 3) Leggi file  \n| 4) Cancella file \n| 5) Crea directory\n| 6) Stampa contenuto directory \n| 7) Cambia directory\n|---------Per uscire inserisci 0--------\n");
+		printf("| 1) Crea File \n| 2) Scrivi su file \n| 3) Leggi file  \n| 4) Cancella file \n| 5) Crea directory\n| 6) Stampa contenuto directory \n| 7) Cambia directory\n| 0) Esci\n|-----------------------------------------------------|\n");
 		scanf("%d",&risposta);
 
 		switch(risposta){
@@ -61,6 +61,12 @@ int main(int argc, char** argv){
 			break;
 
 		case 2:// Scrittura su file
+            printf("------Lista file disponibili------\n");
+            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+			for(i=0; i<dir_handle->dcb->num_entries; i++){
+				if(is_file[i] == 0) // se è file
+					printf("FILE - %s\n", file_in_directory[i]);
+			}
 			printf("------Inserire nome del file su cui scrivere------\n");
 			scanf("%s",nomefile);
 			file_handle = SimpleFS_openFile(dir_handle, nomefile);
@@ -70,7 +76,7 @@ int main(int argc, char** argv){
 				break;
 			}
 
-			printf("---------Inserire testo da scrivere nel file----------\n");
+			printf("------Inserire testo da scrivere nel file------\n");
 			testo[512];
 			scanf("%s",testo);
 
@@ -84,7 +90,13 @@ int main(int argc, char** argv){
 			break;
 
 		case 3:// Lettura del file
-			printf("---------Inserire nome del file da leggere----------\n");
+            printf("------Lista file disponibili------\n");
+            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+			for(i=0; i<dir_handle->dcb->num_entries; i++){
+				if(is_file[i] == 0) // se è file
+					printf("FILE - %s\n", file_in_directory[i]);
+			}
+			printf("------Inserire nome del file da leggere------\n");
 			scanf("%s",nomefile);
 			file_handle = SimpleFS_openFile(dir_handle, nomefile);
 
@@ -114,6 +126,14 @@ int main(int argc, char** argv){
 			break;
 
 		case 5: // creazione directory
+            printf("------Lista file/directory disponibili------\n");
+            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+			for(i=0; i<dir_handle->dcb->num_entries; i++){
+				if(is_file[i] == 0) // se è file
+					printf("FILE - %s\n", file_in_directory[i]);
+				else
+					printf("DIR  - %s\n", file_in_directory[i]);
+			}
 			printf("------Inserire nome directory------\n");
 			scanf("%s",nomefile);
 			SimpleFS_mkDir(dir_handle,nomefile);
@@ -134,11 +154,11 @@ int main(int argc, char** argv){
 			break;
 
 		case 7://Cambio directory
-			printf("--------Inserire directory ('..' per tornare indietro)----------\n");
+			printf("------Inserire directory ('..' per tornare indietro)------\n");
 			scanf("%s",nomefile);
 			SimpleFS_changeDir(dir_handle, nomefile);
-			printf("---------Directory cambiata---------");
-			printf("Directory corrente: %s", dir_handle->dcb->fcb.name);
+			printf("------Directory cambiata------\n");
+			printf("Directory corrente: %s\n", dir_handle->dcb->fcb.name);
 
 			break;
 

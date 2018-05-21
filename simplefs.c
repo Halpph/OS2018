@@ -593,8 +593,8 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 		printf("Impossible to change directory, this directory is empty\n");
 		return -1;
 	}
-	
-	printf("-----ERRORE PRIMA DI FDB-----\n");
+
+
     // if not go level up and directory is not empty
 	FirstDirectoryBlock *fdb = d->dcb;
 	DiskDriver* disk = d->sfs->disk;
@@ -602,8 +602,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 	FirstDirectoryBlock* to_check = malloc(sizeof(FirstDirectoryBlock));
 
     for (i = 0; i < max_free_space_fdb; i++){ //checks every block indicator in the directory block
-    	printf("-----NEL FOR i-----\n");
-       if (fdb->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &to_check, fdb->file_blocks[i]) != -1){  //read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
+       if (fdb->file_blocks[i]> 0 && DiskDriver_readBlock(disk, to_check, fdb->file_blocks[i]) != -1){  //read the FirstFileBlock of the file to check the name (if to_check block is not empty, block[i]>0)
            if (strncmp(to_check->fcb.name, dirname, 128) == 0){ // string compare name strings, return 0 if s1 == s2
                 DiskDriver_readBlock(disk, to_check, fdb->file_blocks[i]); // read again the correct directory to save it
                 d->pos_in_block = 0; // reset directory
@@ -613,8 +612,8 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
            }
        }
    }
-		
-		printf("-----ERRORE PRIMA DI DB-----\n");
+
+
    int next = fdb->header.next_block;
    DirectoryBlock db;
 
