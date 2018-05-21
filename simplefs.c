@@ -85,7 +85,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         int i;
         for(i = 0; i < max_free_space_fdb; i++){
             if(fdb->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&to_check,fdb->file_blocks[i]) != -1)){ //check if block is free
-                if(strncmp(to_check.fcb.name,filename,128)){
+                if(strncmp(to_check.fcb.name,filename,128) == 0){
                     printf("createFile: File already exists!\n");
                     return NULL;
                 }

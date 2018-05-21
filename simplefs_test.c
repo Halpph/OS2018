@@ -215,5 +215,9 @@ int main(int argc, char** argv) {
     printf("DataBlock size %ld\n", sizeof(FileBlock));
     printf("FirstDirectoryBlock size %ld\n", sizeof(FirstDirectoryBlock));
     printf("DirectoryBlock size %ld\n", sizeof(DirectoryBlock));*/
+    
+    
+    printf("@@@@@@@@@@@@@@@@@@@@@ SIMPLE-FS TEST @@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    
 
 }
