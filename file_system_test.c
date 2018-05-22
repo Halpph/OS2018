@@ -8,17 +8,18 @@
 int main(int argc, char** argv){
 
 	DiskDriver disk_driver;
-  const char* filename = "./test.txt";
+    const char* filename = "./disk.txt";
 
 	DiskDriver_init (&disk_driver, filename, 512);//inizializzo il disk driver con 5 blocchi
-	printf("Disk Driver initialized\n");
+	printf("------Disk Driver initialized------\n");
 
 	SimpleFS sfs;
 
-    printf("-------SimpleFS init---------\n");
+    printf("------SimpleFS init---------\n");
 	DirectoryHandle* dir_handle = SimpleFS_init(&sfs, &disk_driver);
     if(dir_handle == NULL){
-        printf("-------SimpleFS formatted---------\n\n");
+        printf("------SimpleFS formatted---------\n\n");
+        DiskDriver_init (&disk_driver, filename, 512);//inizializzo il disk driver con 5 blocchi
         SimpleFS_format(&sfs);
         dir_handle = SimpleFS_init(&sfs, &disk_driver);
 
@@ -40,8 +41,10 @@ int main(int argc, char** argv){
 
 
 	do{
-		printf("|--------- Selezionare l'operazione da fare: ---------|\n");
-		printf("| 1) Crea File \n| 2) Scrivi su file \n| 3) Leggi file  \n| 4) Cancella file \n| 5) Crea directory\n| 6) Stampa contenuto directory \n| 7) Cambia directory\n| 0) Esci\n|-----------------------------------------------------|\n");
+        printf("\n|@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|");
+		printf("\n|--------- Selezionare l'operazione da fare: ---------|\n");
+        printf("|               DIRECTORY CORRENTE: '%s'\n",dir_handle->dcb->fcb.name);
+		printf("| 1) Crea File \n| 2) Scrivi su file \n| 3) Leggi file  \n| 4) Cancella file/directory \n| 5) Crea directory\n| 6) Stampa contenuto directory \n| 7) Cambia directory\n| 0) Esci\n|-----------------------------------------------------|\n|@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|\n");
 		scanf("%d",&risposta);
 
 		switch(risposta){
@@ -49,13 +52,12 @@ int main(int argc, char** argv){
 		case 1://Creazione del file
 			printf("------Inserire nome del file------\n");
 			scanf("%s",nomefile);
-
 			file_handle = SimpleFS_createFile(dir_handle, nomefile);
 			if (file_handle == NULL){
-				printf("File non creato\n");
+				printf("[!] File non creato\n");
 				break;
 			}
-			printf("File creato\n");
+			printf("[OK] File creato\n");
 
 			free(file_handle);
 
@@ -73,7 +75,7 @@ int main(int argc, char** argv){
 			file_handle = SimpleFS_openFile(dir_handle, nomefile);
 
 			if (file_handle == NULL){
-				printf("Impossibile aprire file");
+				printf("[!] Impossibile aprire file");
 				break;
 			}
 
@@ -83,9 +85,9 @@ int main(int argc, char** argv){
 
 			ret = SimpleFS_write(file_handle, testo, strlen(testo));
 			if (ret == -1){
-				printf("Errore: impossibile scrivere sul file\n");
+				printf("[!] Impossibile scrivere sul file\n");
 			}
-			printf("Scrittura su file eseguita!!!!!\n");
+			printf("[OK] Scrittura su file eseguita\n");
 
 			free(file_handle);
 			break;
@@ -102,16 +104,16 @@ int main(int argc, char** argv){
 			file_handle = SimpleFS_openFile(dir_handle, nomefile);
 
 			if (file_handle == NULL){
-				printf("Impossibile aprire file");
+				printf("[!] Impossibile aprire file");
 				break;
 			}
 			testo[512];
 			ret = SimpleFS_read(file_handle, testo, file_handle->fcb->fcb.written_bytes);
 
 			if (ret == -1){
-				printf("Errore: impossibile leggere il file\n");
+				printf("[!] impossibile leggere il file\n");
 			}
-			printf("Contenuto del file: \n'%s' \n", testo);
+			printf("[OK] Contenuto del file: \n'%s' \n", testo);
 
 			free(file_handle);
 
@@ -128,16 +130,17 @@ int main(int argc, char** argv){
 			}
 
 			printf("------Inserire nome del file da eliminare------\n");
+            //printf("------ATTENZIONE: selezionando una directory, cancellerai tutti i file sottostanti!------\n");
 			scanf("%s",nomefile);
 
 			ret = SimpleFS_remove(dir_handle, nomefile);
-			if (ret == 0)	printf("------File eliminato------\n");
-			else if(ret == -1) printf("------Errore eliminazione file------\n");
+			if (ret == 0)	printf("[OK] Blocco eliminato\n");
+			else if(ret == -1) printf("[!] Errore eliminazione blocco\n");
 			break;
 
 		case 5: // creazione directory
-      printf("------Lista file/directory disponibili------\n");
-      SimpleFS_readDir(file_in_directory,is_file,dir_handle);
+            printf("------Lista file/directory disponibili------\n");
+            SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 			for(i=0; i<dir_handle->dcb->num_entries; i++){
 				if(is_file[i] == 0) // se è file
 					printf("FILE - %s\n", file_in_directory[i]);
@@ -146,13 +149,13 @@ int main(int argc, char** argv){
 			}
 			printf("------Inserire nome directory------\n");
 			scanf("%s",nomefile);
-			SimpleFS_mkDir(dir_handle,nomefile);
-			printf("------Directory creata------\n");
-
+			ret = SimpleFS_mkDir(dir_handle,nomefile);
+			if(ret == 0) printf("[OK] Directory creata\n");
+            else if(ret == -1) printf("[!] Impossibile creare directory\n");
 			break;
 
 		case 6:// Stampa contenuto directory
-			printf("Contenuto Directory:\n\n");
+			printf("\nContenuto Directory:\n");
 			SimpleFS_readDir(file_in_directory,is_file,dir_handle);
 			for(i=0; i<dir_handle->dcb->num_entries; i++){
 				if(is_file[i] == 0) // se è file
@@ -176,9 +179,10 @@ int main(int argc, char** argv){
 
 			printf("------Inserire directory ('..' per tornare indietro)------\n");
 			scanf("%s",nomefile);
-			SimpleFS_changeDir(dir_handle, nomefile);
-			printf("------Directory cambiata------\n");
-			printf("Directory corrente: %s\n", dir_handle->dcb->fcb.name);
+			ret = SimpleFS_changeDir(dir_handle, nomefile);
+			if(ret == 0) printf("[OK] Directory cambiata -> Directory corrente: %s\n", dir_handle->dcb->fcb.name);
+            else if(ret == -1) printf("[!] Impossibile cambiare directory\n");
+
 
 			break;
 

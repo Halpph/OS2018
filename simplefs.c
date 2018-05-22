@@ -12,7 +12,6 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
     fs->disk = disk;
 
     FirstDirectoryBlock * fdb = malloc(sizeof(FirstDirectoryBlock));
-
     int ret = DiskDriver_readBlock(disk,fdb,0); // reading first block
     if(ret == -1){ // no block
         free(fdb);
@@ -276,7 +275,7 @@ int SimpleFS_readDir(char** names,int* is_file, DirectoryHandle* d){
 			while (next != -1){	 // check all blocks (next == -1 => no more block to be checked)
 				ret = DiskDriver_readBlock(disk, &db, next); // read new directory block
 				if (ret == -1){
-					printf("Impossible to read all direcory, problems on next block\n");
+					printf("Impossible to read all directory, problems on next block\n");
 					return -1;
 				}
 
@@ -367,7 +366,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 		}
 
 	} else { //if 0 entries => directory is empty
-		printf("Impossible to open file: direcoty is empty\n");
+		printf("Impossible to open file: directory is empty\n");
 		return NULL;
 	}
     return NULL;

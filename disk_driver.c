@@ -13,15 +13,15 @@
 // compiles a disk header, and fills in the bitmap of appropriate size
 // with all 0 (to denote the free space);
 void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
-		printf("Init started\n");
+		//printf("Init started\n");
     int bitmap_size = num_blocks/8;
     if(bitmap_size == 0) bitmap_size+=1; //there must be almost 1 block
-		printf("Bitmap_size = %d\n",bitmap_size);
+		//printf("Bitmap_size = %d\n",bitmap_size);
 		int fd;
 		int is_file=access(filename, F_OK) == 0;
 
     if(is_file){
-    		printf("File exists\n");
+        //printf("File exists\n");
         //file esiste gia
         fd = open(filename,O_RDWR,(mode_t)0666);
 				//alloco header e setto a 0 tutti i bit dell'header + quelli della bitmap
@@ -34,16 +34,16 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
         //metto l'header appena creato nell'header che mi passa la funzione
         disk->header = disk_header;
         disk->bitmap_data = (char*)disk_header + sizeof(DiskHeader);
-				printf("E Free blocks:%d\n", disk->header->free_blocks);
-	      printf("E First free block:%d\n", disk->header->first_free_block);
-        printf("E Bitmap:%d\n\n", disk->bitmap_data[0]);
+				//printf("E Free blocks:%d\n", disk->header->free_blocks);
+	      //printf("E First free block:%d\n", disk->header->first_free_block);
+        //printf("E Bitmap:%d\n\n", disk->bitmap_data[0]);
     }else{
-    		printf("File doesn't exists\n");
-				fd = open(filename, O_RDWR|O_CREAT|O_TRUNC,(mode_t)0666);
-				if(fd == -1){
-				 	printf("File not open");
-				 	return;
-				}
+        printf("------File does not exist: creating it, and re-initializing disk_driver------\n--!!--CAN IGNORE READ BLOCK ERROR--!!--\n");
+            fd = open(filename, O_RDWR|O_CREAT|O_TRUNC,(mode_t)0666);
+            if(fd == -1){
+                printf("File not open");
+                return;
+            }
 
         if(posix_fallocate(fd,0,sizeof(DiskHeader)+bitmap_size > 0)){
         	printf("Errore posix f-allocate");
@@ -64,19 +64,19 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
         disk_header->bitmap_entries = bitmap_size; // di quanti bytes ho bisogno per i blocchi
         disk_header->free_blocks = num_blocks;
         disk_header->first_free_block = 0; // indice del primo blocco libero
-        //memset(disk->bitmap_data,'0', bitmap_size);//metto a zero i bit, meglio usare memset
+        //memset(disk->bitmap_data,'0', bitmap_size);//metto a zero i bit, meglio usare memset rispetto a bzero
 
         bzero(disk->bitmap_data,bitmap_size);
-        																						//rispetto a bzero
-    		printf("E Free blocks:%d\n", disk->header->free_blocks);
-    		printf("E Bitmap Blocks:%d\n", disk->header->bitmap_blocks);
-    		printf("E Bitmap Entries:%d\n", disk->header->bitmap_entries);
-	      printf("E First free block:%d\n", disk->header->first_free_block);
-        printf("E Bitmap:%d\n\n", disk->bitmap_data[0]);
+
+        /*printf("E Free blocks:%d\n", disk->header->free_blocks);  // DEBUG
+        printf("E Bitmap Blocks:%d\n", disk->header->bitmap_blocks);
+        printf("E Bitmap Entries:%d\n", disk->header->bitmap_entries);
+        printf("E First free block:%d\n", disk->header->first_free_block);
+        printf("E Bitmap:%d\n\n", disk->bitmap_data[0]);*/
     }
 
     disk->fd = fd;
-    printf("Init end\n");
+    //printf("Init end\n");
 }
 
 // reads the block in position block_num
@@ -97,9 +97,9 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
     if(block_num >= bit_map.num_bits) return -1;   // invalid block
     BitMapEntryKey entry_key = BitMap_blockToIndex(block_num);
     if(!(bit_map.entries[entry_key.entry_num] >> entry_key.bit_num & 0x01)){ // controllo se il blocco è libero
-    		printf("Cannot read blocks: is free!\n");
+        printf("Cannot read block: is free!\n");
         return -1;
-        }
+    }
 
     int fd = disk->fd;
     // lseek on DISKHEADER+BITMAPENTRIES+MYBLOCKOFFSET
